@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<title>controller</title>
+	<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+	<meta name="format-detection" content="telephone=no,email=no">
+	<meta name="viewport" content="width=device-width,initial-scale=0.5,maximum-scale=0.5,minimum-scale=0.5,user-scalable=no">
+	<link rel="stylesheet" type="text/css" href="http://apps.bdimg.com/libs/jquerymobile/1.4.5/jquery.mobile-1.4.5.min.css">
+	<link rel="stylesheet" type="text/css" href="http://apps.bdimg.com/libs/bootstrap/3.3.0/css/bootstrap.min.css">
+	<script type="text/javascript" src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+	<script type="text/javascript" src="http://apps.bdimg.com/libs/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+	<style type="text/css">
+		#switch11 {
+			width: 8.5vw;
+			height: 5vw;
+			border-radius: 2.5vw;
+			position: relative;
+		}
+		#switch12 {
+			width: 4.8vw;
+			height: 4.8vw;
+			border-radius: 2.4vw;
+			position: absolute;
+			background: #fff;
+			box-shadow: 0px 2px 4px rgba(0,0,0,0.4);
+		}
+		#switch21 {
+			width: 8.5vw;
+			height: 5vw;
+			border-radius: 2.5vw;
+			position: relative;
+		}
+		#switch22 {
+			width: 4.8vw;
+			height: 4.8vw;
+			border-radius: 2.4vw;
+			position: absolute;
+			background: #fff;
+			box-shadow: 0px 2px 4px rgba(0,0,0,0.4);
+		}
+		.open1 {
+			background: rgba(0,184,0,0.8);
+		}
+		.open2{
+			top: .1vw;
+			right: .05vw;
+		}
+		.close1 {
+			background: rgba(255,255,255,0.4);
+			border:.1vw solid rgba(0,0,0,0.15);
+			border-left: transparent;
+		}
+		.close2 {
+			left: 0vw;
+			top: 0vw;
+			border:.02vw solid rgba(0,0,0,0.1);
+		}
+	</style>
+	<script type="text/javascript">
+		$(document).ready(function(){
+			var switch11=document.getElementById("switch11");
+			var switch12=document.getElementById("switch12");
+			var switch21=document.getElementById("switch21");
+			var switch22=document.getElementById("switch22");
+			var spt=$("#sp").text();
+			var speed=parseInt(spt);
+			$.ajax({
+				dataType:'JSONP',
+				url:'https://api.map.baidu.com/telematics/v3/weather?location=%E5%8C%97%E4%BA%AC&output=json&ak=6tYzTvGZSOpYB5Oc2YGGOKt8',
+				type:'GET',
+				async:true,
+				jsonp:'callback',
+				jsonpCallback:"fonc",
+				success:function(res){
+					var str = res.results[0].weather_data[0].date;
+					var wind=res.results[0].weather_data[0].wind;
+					var wea=res.results[0].weather_data[0].weather;
+					var tmp1=str.match(/实时.+/);
+					var tmp2 = tmp1[0].substring(3, tmp1[0].length-1);
+					var tmp=+tmp2;
+					$("#temperatureO").prepend(tmp2);
+					$("#wind").prepend(wind);
+					$("#weather").prepend(wea);
+				},
+			});
+			$(switch11).click(function(){
+				if(switch11.className=="close1") {
+					switch11.className="open1";
+				}
+				else {
+					switch11.className="close1";
+				}
+				if(switch12.className=="close2") {
+					switch12.className="open2";
+					send('i');
+				}
+				else {
+					switch12.className="close2";
+					send('o');
+				}
+			})
+			$(switch21).click(function(){
+				if(switch21.className=="close1") {
+					switch21.className="open1";
+				}
+				else {
+					switch21.className="close1";
+				}
+				if(switch22.className=="close2") {
+					switch22.className="open2";
+					send('a');
+				}
+				else {
+					switch22.className="close2";
+					send(speed);
+				}
+			})
+			$("#up").click(function(){
+				speed++;
+				if(speed>5){
+					speed=5;
+					alert("The highest speed level is 5!")
+				}
+				$("#sp").text(function(){
+					return speed;
+				});
+				send(speed);
+			});
+			$("#down").click(function(){
+				speed--;
+				if(speed<1){
+					speed=1;
+					alert("The lowest speed level is 1!")
+				}
+				$("#sp").text(function(){
+					return speed;
+				});
+				send(speed);
+			});
+		});
+		//功能核心代码
+		function send(value){
+			$.ajax({
+				dataType:'JSONP',
+				url:'http://192.168.43.28:8090?data='+value,  //将IP地址改成Arduino的IP地址
+				type:'GET',
+				async:true,
+				jsonp:'callback',
+				jsonpCallback:"success_jsonpCallback",
+				contentType:"application/json",
+				success:function(res){
+					$("#temperatureI").text(function(){
+						return res.Temperature+"℃";
+					});
+					$("#humidity").text(function(){
+						return res.Humidity;
+					});
+					$("#light").text(function(){
+						return res.Light;
+					});
+					$("#time").text(function(){
+						return "(Update at"+Date()+")";
+					});
+				}
+			})
+		}
+	</script>
+</head>
+<body>
+	<header class="navbar-fixed-top" style="text-align: center; font-size: 5vw; background-image: linear-gradient(90deg,#000,#999); color: #fff;"><b>Intelligent Households--Going along with You</b></header>
+	<div style="margin-top: 18vw; margin-bottom: 5%;">
+		<h3 style="text-align: center;font-size: 3vw">Control Part</h3>
+		<div>
+			<div style="display: inline-block;float: left;">
+				<span style="font-size: 5vw">Power</span>
+				<div style="display: inline-block;" id="switch11" class="close1">
+					<div id="switch12" class="close2"></div>
+				</div>
+			</div>
+			<div style="display: inline-block;float: right;">
+				<span style="font-size: 5vw">Automatic Control</span>
+				<div style="display: inline-block;" id="switch21" class="open1">
+					<div id="switch22" class="open2"></div>
+				</div>
+			</div>
+		</div>
+		<div style="clear: both;"></div>
+		<div style="font-size: 4vw">
+			<div class="col-xs-2 col-sm-2" style="height: 100%;">
+				<button id="down" type="button" class="btn btn-primary" style="height: 10vw;width: 10vw;font-size: 3vw">Down</button>
+			</div>
+			<div class="col-xs-5 col-sm-5" style="height: 100%;display: inline-block;">
+				<p style=" font-size: 5vw">Current Speed:</p>
+			</div>
+			<div class="col-xs-3 col-sm-3" style="height: 100%;display: inline-block;">
+				<p id="speed" style="text-align: left;font-size: 4vw">Lv<span id="sp" style="text-align: left;font-size: 4vw">1</span></p>
+			</div>
+			<div class="col-xs-2 col-sm-2" style="height: 100%;display: inline-block;">
+				<button id="up" type="button" class="btn btn-primary" style="height: 10vw;width: 10vw;font-size: 3vw">Up</button>
+			</div>
+		</div>
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<h3 style="text-align: center;font-size: 3vw">Condition Part</h3>
+		<div class="col-xs-12 col-sm-12 col-md-6" style="display: inline-block;font-size: 4vw">
+			<table class="table table-striped">
+				<caption style="text-align: center;"><b>Inside</b></caption>
+				<tr>
+					<td>Temperature</td>
+					<td id="temperatureI"></td>
+				</tr>
+				<tr>
+					<td>Humidity</td>
+					<td id="humidity"></td>
+				</tr>
+				<tr>
+					<td>Light</td>
+					<td id="light"></td>
+				</tr>
+			</table>
+			<p id="time" style="text-align: center;color: #666"></p>
+		</div>
+		<div class="col-xs-12 col-sm-12 col-md-6" style="display: inline-block;font-size: 4vw">
+			<table class="table table-striped">
+				<caption style="text-align: center;"><b>Outside</b></caption>
+				<tr>
+					<td>Temperature</td>
+					<td id="temperatureO"></td>
+				</tr>
+				<tr>
+					<td>Wind</td>
+					<td id="wind"></td>
+				</tr>
+				<tr>
+					<td>Weather</td>
+					<td id="weather"></td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	<footer class="navbar-fixed-bottom" style="text-align: center; font-size: 3vw; color: #888">&copy;&nbsp;2017&nbsp;LFM</footer>
+</body>
+</html>
